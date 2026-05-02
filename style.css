@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+@media print {
+  body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    background: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .receipt-container {
+    box-shadow: none !important;
+    border: none !important;
+    width: 180mm !important;
+    max-width: 180mm !important;
+    margin: 10mm auto !important;
+    padding: 10mm !important;
+  }
+
+  .border-b-2 {
+    border-bottom-width: 2px !important;
+  }
+
+  .border-t-2 {
+    border-top-width: 2px !important;
+  }
+
+  .bg-gray-50 {
+    background-color: #f9fafb !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .bg-gray-200 {
+    background-color: #e5e7eb !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+/* Custom scrollbar for panels */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+/* Active Tab Styling */
+.active-tab {
+  background-color: #4f46e5 !important;
+  color: white !important;
+  border-color: #4f46e5 !important;
+  font-weight: 600;
+}
+
+/* Input Focus Styling */
+.pro-input {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  width: 100%;
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.pro-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Professional Card Panels */
+.pro-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pro-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Base button animations */
+button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+button:hover {
+  transform: translateY(-1px) scale(1.02);
+}
+button:active {
+  transform: scale(0.95) !important;
+}
+
+/* Page Load Fade-in */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered Row Animation */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-row {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* Pulse Glow for Add Item Button */
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+}
+.btn-primary-pulse:hover {
+  animation: pulseGlow 1.5s infinite;
+}
+
+/* Splash Screen Print Animation */
+@keyframes printOutAnimation {
+  0% { transform: translateY(200px); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-print {
+  animation: printOutAnimation 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: 0.2s;
+}
+
+/* Scanner Laser Animation */
+@keyframes scanLaser {
+  0% { top: 10%; opacity: 0; }
+  10% { opacity: 1; }
+  50% { top: 90%; }
+  90% { opacity: 1; }
+  100% { top: 10%; opacity: 0; }
+}
+
+.scanner-laser {
+  position: absolute;
+  left: 10%;
+  width: 80%;
+  height: 3px;
+  background: #3b82f6;
+  box-shadow: 0 0 10px 3px rgba(59, 130, 246, 0.6);
+  z-index: 25;
+  animation: scanLaser 1.5s ease-in-out infinite;
+}
+
+/* Receipt Roll-Down Animation */
+@keyframes rollDown {
+  0% { max-height: 0; opacity: 0; transform: translateY(-20px); }
+  100% { max-height: 1500px; opacity: 1; transform: translateY(0); }
+}
+
+.animate-roll-down {
+  animation: rollDown 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  overflow: hidden;
+}
+
+/* Green Flash on Add */
+@keyframes flashSuccess {
+  0% { background-color: #dcfce7; }
+  100% { background-color: transparent; }
+}
+
+.animate-flash {
+  animation: flashSuccess 1s ease-out forwards;
+}
+
+
+
+
+@keyframes nallathe {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.5; }
+}
+
+.animate-nallathe {
+  animation: nallathe 2s ease-in-out infinite;
+}

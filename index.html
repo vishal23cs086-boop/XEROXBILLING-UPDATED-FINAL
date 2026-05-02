@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>SRI SATHYA XEROX POS</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+</head>
+
+<body class="font-sans h-screen flex flex-col overflow-hidden text-slate-800 bg-slate-50">
+
+  <!-- Top Navigation (No Print) -->
+  <nav
+    class="bg-indigo-700 text-white p-4 shadow-md flex justify-between items-center no-print relative z-50">
+    <div class="flex items-center gap-3">
+      <img src="logo.jpg" alt="Logo" class="h-12 w-auto object-contain mix-blend-multiply"
+        onerror="this.onerror=null; this.outerHTML='<div class=&quot;bg-white/20 text-white w-8 h-8 rounded flex items-center justify-center font-bold text-xl&quot; title=&quot;Please save your logo as logo.jpg in this folder&quot;>S</div>';">
+      <h1 class="text-xl font-bold tracking-wide hidden sm:block">SRI SATHYA XEROX POS</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <button onclick="toggleDarkMode()" title="Toggle Dark Mode"
+        class="text-2xl hover:scale-110 transition ">🌙</button>
+      <button id="adminSettingsBtn" onclick="openAdminSettings()"
+        class="hidden pro-card hover:bg-gray-700/50 font-bold px-4 py-2 rounded shadow flex items-center gap-2 transition text-sm">
+        ⚙️ Settings
+      </button>
+      <button onclick="openReportsModal()"
+        class="bg-indigo-600 hover:bg-indigo-700 font-bold px-4 py-2 rounded shadow flex items-center gap-2 transition text-sm">
+        📊 Reports
+      </button>
+      <button onclick="logout()"
+        class="bg-red-500 hover:bg-red-600 font-bold px-4 py-2 rounded shadow flex items-center gap-2 transition text-sm">
+        🚪 Logout <span id="currentUserLabel"
+          class="text-xs font-normal ml-1  uppercase tracking-widest hidden sm:inline"></span>
+      </button>
+      <label class="font-semibold text-sm hidden lg:block">Select Branch:</label>
+      <select id="branchSelector" onchange="changeBranch()"
+        class="bg-white text-gray-800 border border-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer font-semibold shadow-sm">
+        <option value="branch2">Branch 2 (Peelamedu)</option>
+        <option value="branch1">Branch 1 (Anna Nagar)</option>
+      </select>
+    </div>
+  </nav>
+
+  <!-- Main Workspace -->
+  <div class="flex-1 overflow-hidden flex flex-col md:flex-row no-print relative">
+
+    <!-- LEFT PANEL: Controls & Inputs -->
+    <div
+      class="w-full md:w-5/12 p-5 overflow-y-auto custom-scroll pro-card flex flex-col gap-6 z-10 space-y-2 border-r-0 md:rounded-r-xl">
+
+      <!-- Customer Details Card -->
+      <div class="pro-card p-4 transition">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xs font-bold text-gray-600 uppercase tracking-wider">Customer Details</h2>
+          <div class="flex items-center gap-2">
+            <select id="documentType" onchange="updateDocumentType()" class="text-xs font-bold bg-white border border-gray-300 rounded px-2 py-1 outline-none cursor-pointer text-gray-700 shadow-sm">
+              <option value="invoice">Invoice</option>
+              <option value="quotation">Quotation</option>
+            </select>
+            <span id="leftPanelInvoiceMeta"
+              class="text-[10px] font-black text-blue-800 bg-blue-100 px-2 py-1 rounded shadow-sm hidden tracking-widest uppercase border border-blue-200"></span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <input id="customerName" placeholder="Customer Name" class="pro-input" oninput="updateCustomerName()">
+          <div class="flex">
+            <select id="countryCode" class="pro-input w-[65px] font-bold text-gray-700">
+              <option value="91">+91 (IN)</option>
+            </select>
+            <input id="customerMobile" placeholder="Mobile Number" class="pro-input w-full font-medium ml-2">
+          </div>
+        </div>
+        <input id="customerGSTINInput" placeholder="Customer GSTIN (Optional B2B)" class="pro-input uppercase">
+      </div>
+
+      <!-- Add Item Card -->
+      <div class="pro-card p-4 transition">
+        <h2 class="text-xs font-bold uppercase tracking-wider mb-3 ">Add Bill Item</h2>
+
+        <input id="search" onkeyup="filterItems()" placeholder="🔍 Quick Search item..." class="pro-input mb-4">
+
+        <div class="flex gap-2 mb-3">
+          <button onclick="setCategory('xerox', this)"
+            class="tab active-tab flex-1 p-2 rounded-lg font-semibold text-sm transition text-white">Xerox &
+            Serv.</button>
+          <button onclick="setCategory('stationery', this)"
+            class="tab flex-1 p-2 rounded-lg font-semibold text-sm transition glass">Stationery</button>
+        </div>
+
+        <select id="item" onchange="autoFillPrice()" class="pro-input mb-3 font-medium text-gray-700"></select>
+
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <input id="price" type="number" placeholder="Unit Price (₹)" class="pro-input">
+          <input id="qty" type="number" placeholder="Quantity/Copies" class="pro-input">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <select id="discountType" class="pro-input cursor-pointer">
+            <option value="none">No Discount</option>
+            <option value="amount">₹ Discount Amt</option>
+            <option value="percent">% Discount</option>
+          </select>
+          <input id="discountValue" type="number" placeholder="Discount Value" class="pro-input">
+        </div>
+
+        <button onclick="addItem()"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 w-full rounded-lg text-lg">
+          + Add Item to Bill
+        </button>
+      </div>
+
+      <!-- Settings Card -->
+      <div class="pro-card p-4 transition">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xs font-bold text-gray-600 uppercase tracking-wider">Apply GST (18%)</h2>
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="gstToggle" checked class="sr-only peer" onchange="toggleGST()">
+            <div
+              class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 relative">
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Custom Item Card -->
+      <div class="bg-orange-50 border border-orange-100 p-4 rounded-xl shadow-sm hover:shadow transition">
+        <h2 class="text-xs font-bold text-orange-600 uppercase tracking-wider mb-3">Save Custom Item (For Future)</h2>
+        <div class="flex gap-2">
+          <input id="customItem" placeholder="✍️ Custom Item Name"
+            class="border border-gray-300 p-2 text-sm rounded-lg flex-1 outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm">
+          <button onclick="saveCustomItem()"
+            class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 font-semibold rounded-lg shadow-sm transition">
+            Save
+          </button>
+        </div>
+      </div>
+
+      <!-- Payment Details Card -->
+      <div class="pro-card p-4 transition">
+        <h2 class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Payment Details</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold text-gray-500 mb-1 block">Amount Paid (₹)</label>
+            <input id="amountPaidInput" type="number" placeholder="Enter Amount" class="pro-input font-bold" oninput="calculateBalance()">
+          </div>
+          <div>
+            <label id="balanceInputLabel" class="text-xs font-bold text-gray-500 mb-1 block">Balance (₹)</label>
+            <input id="balanceAmountInput" type="text" placeholder="0.00" class="pro-input bg-gray-100 font-black text-blue-600" readonly>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL: Receipt Preview -->
+    <div
+      class="w-full md:w-7/12 bg-gray-200 p-4 md:p-6 lg:p-8 flex justify-center overflow-y-auto custom-scroll relative">
+      <!-- Floating Actions -->
+      <div class="absolute top-6 right-6 flex gap-3 z-20 no-print" id="floatingActions">
+        <button id="generateInvoiceBtn" onclick="generateNewInvoice()"
+          class="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 rounded-lg font-bold shadow-lg transition flex items-center gap-2 transform hover:scale-105">
+          📝 Generate Invoice
+        </button>
+        <button onclick="clearBill()"
+          class="bg-white text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition border border-gray-200 flex items-center gap-2">
+          🗑️ Trash Bill
+        </button>
+        <button onclick="confirmBill()"
+          class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+          ✅ Confirm
+        </button>
+        <button onclick="sendWhatsApp()"
+          class="bg-[#25D366] text-white hover:bg-green-600 px-4 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+          💬 WhatsApp
+        </button>
+        <button id="printBtn" onclick="printReceipt()"
+          class="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 rounded-lg font-bold shadow-lg transition flex items-center gap-2 transform hover:scale-105 hidden">
+          🖨️ Print
+        </button>
+        <button id="sendImageBtn" onclick="sendInvoiceImage()"
+          class="bg-teal-500 text-white hover:bg-teal-600 px-4 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+          📸 Send Invoice (Image)
+        </button>
+      </div>
+
+      <!-- The Actual Receipt Document -->
+      <!-- The Actual Receipt Document -->
+      <div id="receiptDocument"
+        class="bg-white shadow-2xl w-full max-w-3xl min-h-[800px] border border-gray-300 receipt-container flex flex-col md:mt-0 relative overflow-hidden text-gray-800">
+
+        <!-- Curved Blue Banner -->
+        <div
+          class="relative z-10 w-full bg-white text-gray-900 p-6 md:p-8 border-b-2 border-gray-100 rounded-b-xl flex justify-between items-start">
+          <div class="flex items-start gap-4">
+            <img src="logo.jpg" class="h-16 w-auto object-contain mix-blend-multiply"
+              onerror="this.style.display='none'">
+            <div class="flex flex-col">
+              <span id="receiptHeaderCompanyName"
+                class="text-lg md:text-2xl font-black tracking-widest uppercase ">SRI SATHYA XEROX & E
+                SERVICES</span>
+              <p id="receiptInvoiceNoStr" class="text-sm font-bold text-gray-600 mt-1">INVOICE NO: </p>
+              <p id="receiptGSTIN"
+                class="mt-1 text-[#fb923c] font-black text-[10px] tracking-widest bg-white/10 px-2 py-0.5 inline-block rounded border border-white/20 w-max hidden">
+                GSTIN: <span id="gstinValue"></span></p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p id="receiptDateStr" class="text-sm font-bold text-gray-400 uppercase"></p>
+            <p id="receiptTimeStr" class="text-[10px] font-semibold text-blue-200 tracking-widest uppercase hidden"></p>
+          </div>
+        </div>
+
+        <!-- 2-Column Details -->
+        <div class="px-8 py-6 grid grid-cols-2 gap-6 relative z-20">
+          <!-- Column 1: Bill To -->
+          <div class="flex flex-col justify-start text-sm border-l-4 border-blue-500 pl-4 h-full">
+            <span id="receiptBillToLabel" class="text-[10px] font-black uppercase text-gray-600 mb-1 tracking-widest">Bill To:</span>
+            <p id="receiptCustomerName" class="font-black text-lg text-gray-900 leading-tight">Cash Customer</p>
+            <p id="receiptCustomerMobile" class="text-gray-600 font-semibold mt-1"></p>
+            <p id="receiptCustomerGSTINStr"
+              class="text-[10px] text-blue-800 font-bold mt-2 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 hidden w-max uppercase tracking-widest leading-none">
+              GSTIN: <span id="receiptCustomerGSTINValue"></span></p>
+          </div>
+          <!-- Column 2: Shop Details -->
+          <div class="flex flex-col justify-start text-sm border-l-4 border-gray-300 pl-4 h-full">
+            <span class="text-[10px] font-black uppercase text-gray-600 mb-1 tracking-widest">Shop Details:</span>
+            <p class="font-bold text-gray-900 leading-tight" id="receiptHeaderCompanyNameSmall">SRI SATHYA XEROX & E
+              SERVICES</p>
+            <p id="contactAddressTop" class="text-[11px] text-gray-600 mt-1 leading-tight"></p>
+            <p id="contactPhonesTop" class="text-[11px] text-gray-600 mt-1 font-semibold leading-tight"></p>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="px-8 py-2 flex-1 z-10 w-full text-sm">
+          <table class="w-full text-left border-collapse" id="printTable">
+            <thead>
+              <tr class="bg-blue-600 text-white font-bold uppercase text-[11px] tracking-wider">
+                <th class="py-2.5 px-3 w-12 text-center rounded-tl-lg">S.No</th>
+                <th class="py-2.5 px-3">Description</th>
+                <th class="py-2.5 px-3 text-center">Qty</th>
+                <th class="py-2.5 px-3 text-right">Price</th>
+                <th class="py-2.5 px-3 text-right">Amount</th>
+                <th class="py-2.5 px-3 text-center no-print w-10 border-l border-blue-500 rounded-tr-lg">Act</th>
+              </tr>
+            </thead>
+            <tbody id="list" class="divide-y divide-gray-100/80">
+              <!-- Items go here -->
+            </tbody>
+          </table>
+          <div id="emptyCart"
+            class="text-center py-6 tracking-widest text-gray-400 font-bold uppercase no-print border-b border-gray-100">
+            Bill is empty
+          </div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="px-8 pb-4 mt-auto flex flex-col items-end">
+          <div class="w-full max-w-[320px] rounded-lg overflow-hidden border border-gray-200 bg-white">
+            <div class="flex justify-between py-2 px-4 text-sm font-bold text-gray-800 border-b border-gray-100">
+              <span>Total Qty</span>
+              <span id="totalQty">0</span>
+            </div>
+            <div class="flex justify-between py-2 px-4 text-sm font-bold text-gray-800 border-b border-gray-100">
+              <span>Subtotal</span>
+              <span id="baseTotalAmount">₹ 0.00</span>
+            </div>
+            <div id="discountRow"
+              class="hidden flex justify-between py-1 px-4 text-sm font-bold text-green-600 bg-green-50 border-b border-gray-100">
+              <span>Discount Savings</span>
+              <span id="totalDiscountAmount">-₹ 0.00</span>
+            </div>
+            <div id="afterDiscountRow"
+              class="hidden flex justify-between py-2 px-4 text-sm font-bold text-gray-800 border-b border-gray-100 bg-gray-50">
+              <span>Net Amount</span>
+              <span id="subtotal">₹ 0.00</span>
+            </div>
+            <div id="cgstRow" class="hidden flex justify-between py-1 px-4 text-xs font-bold text-gray-600 bg-gray-50">
+              <span>CGST (9%)</span>
+              <span id="cgstTotal">₹ 0.00</span>
+            </div>
+            <div id="sgstRow"
+              class="hidden flex justify-between py-1 px-4 text-xs font-bold text-gray-600 bg-gray-50 border-b border-gray-100">
+              <span>SGST (9%)</span>
+              <span id="sgstTotal">₹ 0.00</span>
+            </div>
+            <div id="roundOffRow"
+              class="flex justify-between py-2 px-4 text-xs font-semibold text-gray-600 border-b border-gray-200">
+              <span>Round Off</span>
+              <span id="roundOffValue">₹ 0.00</span>
+            </div>
+            <div
+              class="flex justify-between py-3 px-4 bg-blue-600 text-white text-xl font-black tracking-widest shadow-inner">
+              <span>GRAND TOTAL</span>
+              <span id="total">₹ 0.00</span>
+            </div>
+            <div id="paymentPaidRow" class="hidden flex justify-between py-2 px-4 text-sm font-bold text-gray-700 bg-green-50 border-b border-gray-100 border-t border-blue-700">
+              <span>Amount Paid</span>
+              <span id="receiptAmountPaid">₹ 0.00</span>
+            </div>
+            <div id="paymentBalanceRow" class="hidden flex justify-between py-2 px-4 text-sm font-bold text-red-600 bg-red-50">
+              <span id="receiptBalanceLabel">Balance</span>
+              <span id="receiptBalance">₹ 0.00</span>
+            </div>
+          </div>
+          <div id="amountWords" class="w-full text-right font-semibold mt-2 px-1 text-xs text-gray-600 tracking-wide">
+            <!-- Words injected here -->
+          </div>
+        </div>
+
+        <!-- New Curved Footer -->
+        <div
+          class="w-full bg-gray-50 text-gray-600 p-5 mt-auto rounded-t-xl border-t border-gray-200 text-center shadow-[0_-4px_10px_rgba(0,0,0,0.1)] z-10 flex flex-col items-center text-center shadow-[0_-4px_10px_rgba(0,0,0,0.1)] z-10 flex flex-col items-center">
+          <p class="text-center text-[13px] mt-1 mb-2  font-medium">🙏 Thank you for your visit. Wishing you
+            success and happiness!</p>
+          <p class="text-[11px] text-gray-600 font-semibold tracking-wide max-w-sm">
+            <span id="contactAddressFooter"></span><br>
+            📞 <span id="contactPhonesFooter"></span> | ✉️ <span id="contactEmailFooter"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print overlay (only visible when printing, isolates the receipt) -->
+  <div class="print-only fixed inset-0 z-50 bg-white flex justify-center p-0 m-0 w-full h-full">
+    <div id="printArea" class="w-full max-w-3xl"></div>
+  </div>
+
+  <!-- Daily Reports Modal -->
+  <div id="reportsModal"
+    class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center no-print backdrop-blur-sm transition-all duration-300">
+    <div class="pro-card bg-white max-w-4xl w-full p-6 flex flex-col h-[85vh] m-4 animate-[fade-in_0.3s_ease]">
+      <div class="flex justify-between items-center border-b border-gray-400/30 pb-4 mb-4">
+        <h2 class="text-2xl font-black">📊 Analytics Dashboard</h2>
+        <button onclick="closeReportsModal()"
+          class="hover:text-red-500 font-bold text-3xl px-2 leading-none transition transform hover:rotate-90">&times;</button>
+      </div>
+
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex flex-wrap gap-4 items-end">
+          <div id="reportPeriodDiv" class="block">
+            <label class="text-sm font-bold ">Period:</label>
+            <select id="reportPeriod" class="pro-input ml-2 font-medium" onchange="loadReports()">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly (Last 7 Days)</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-bold ">Reference Date:</label>
+            <input type="date" id="reportDate" class="pro-input ml-2 font-medium" onchange="loadReports()">
+          </div>
+          <div id="adminFilterDiv" class="hidden">
+            <label class="text-sm font-bold ">Employee Filter:</label>
+            <select id="reportEmpFilter" class="pro-input ml-2 font-medium" onchange="loadReports()">
+              <option value="ALL">All Employees</option>
+            </select>
+          </div>
+          <div class="flex items-end gap-2 pr-2 border-r border-gray-300 mr-2">
+            <div>
+              <label class="text-xs font-bold  block mb-1">Enter Invoice No:</label>
+              <input type="text" id="reprintInvoiceInput" placeholder="e.g. SSX-..."
+                class="pro-input w-28 text-sm uppercase">
+            </div>
+            <button onclick="manualReprint()"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded shadow text-sm transition">
+              Reprint
+            </button>
+          </div>
+        </div>
+        <button onclick="exportToCSV()"
+          class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow flex items-center gap-2 transition flex-shrink-0">
+          ⬇️ Export
+        </button>
+      </div>
+
+      <!-- Chart JS Dashboard -->
+      <div class="w-full h-48 mb-4">
+        <canvas id="salesChart"></canvas>
+      </div>
+
+      <!-- Staff Performance Dashboard (Owner Only) -->
+      <div id="ownerDashboard"
+        class="hidden mb-4 p-4 rounded-xl border border-white/20 bg-white/5 shadow-sm pointer-events-none no-print">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <h3 class="text-sm md:text-lg font-black uppercase tracking-widest flex items-center gap-2">
+            <span>🏆</span> Staff Performance
+          </h3>
+          <span class="text-xs font-bold bg-white text-orange-600 px-3 py-1 rounded-full shadow-sm">Based on Selected
+            Period</span>
+        </div>
+        <div id="staffPerformanceGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto rounded-xl shadow-inner bg-white/10 p-4 custom-scroll">
+        <table class="w-full text-left text-sm" id="reportsTable">
+          <thead>
+            <tr
+              class="bg-gray-800/80 backdrop-blur top-0 text-white font-bold tracking-wider text-xs uppercase sticky hidden sm:table-row">
+              <th class="p-3 rounded-tl">Time</th>
+              <th class="p-3">Invoice No</th>
+              <th class="p-3">Customer</th>
+              <th class="p-3 text-right">Subtotal</th>
+              <th class="p-3 text-right">GST</th>
+              <th class="p-3 text-right">Grand Total</th>
+              <th class="p-3 text-center rounded-tr no-print">Action</th>
+            </tr>
+          </thead>
+          <tbody id="reportsList" class="divide-y divide-gray-200/20 bg-transparent">
+            <!-- Report items injected here -->
+          </tbody>
+        </table>
+        <div id="noReports" class="text-center py-10 font-bold hidden tracking-widest uppercase opacity-70">No
+          transactions for this date.</div>
+      </div>
+
+      <div class="mt-4 pt-4 border-t flex justify-end text-right">
+        <div
+          class="text-xl font-bold bg-blue-50 text-[#1e2759] px-6 py-3 rounded-lg border border-blue-100 shadow-sm inline-block">
+          <span class="text-xs font-black tracking-widest uppercase text-blue-900 block mb-1 opacity-70">Total Sales
+            Generated</span>
+          <span id="reportTotalSales" class="text-3xl">₹ 0.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+
+  <div id="whatsappPopupModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-60 z-[150] flex items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center border-t-8 border-[#25D366]">
+      <div class="text-6xl mb-4">✅</div>
+      <h3 class="text-2xl font-black text-gray-800 mb-2">Bill Ready!</h3>
+      <p class="text-gray-600 mb-6 font-medium text-sm">Would you like to send this bill directly to the customer via
+        WhatsApp?</p>
+      <div class="flex gap-3">
+        <button onclick="skipWhatsApp()"
+          class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition">No,
+          Skip</button>
+        <button onclick="executeWhatsAppSend()"
+          class="flex-2 w-[60%] flex gap-2 justify-center items-center bg-[#25D366] hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:scale-105">💬
+          Send Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Screen Overlay -->
+  <div id="loginOverlay"
+    class="fixed inset-0 bg-[#1e2759] z-[200] flex items-center justify-center flex-col transition-opacity duration-300">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+      <img src="logo.jpg" class="h-32 w-auto mx-auto mb-4 object-contain mix-blend-multiply"
+        onerror="this.style.display='none'">
+      <h2 class="text-3xl font-black text-blue-800 mb-1 tracking-wide">நல்வரவு</h2>
+      <h3 class="text-sm font-bold text-gray-600 mb-6 tracking-wide uppercase">System Login</h3>
+
+      <div id="loginFormContainer" class="transition-opacity duration-500">
+        <div class="text-left mb-4">
+          <label class="block text-sm font-bold text-gray-600 mb-1">Select User</label>
+          <select id="loginUsername"
+            class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase font-bold text-gray-800 cursor-pointer bg-white">
+            <option value="Nandhakumar">Nandhakumar (Owner)</option>
+            <option value="Vishal">Vishal</option>
+            <option value="Sharanraj">Sharanraj</option>
+            <option value="Valarmathi">Valarmathi</option>
+            <option value="VIVEK">VIVEK</option>
+            <option value="HARSHAVARDHINI">HARSHAVARDHINI</option>
+            <option value="Sathya">Sathya</option>
+          </select>
+        </div>
+        <div class="text-left mb-6">
+          <label class="block text-sm font-bold text-gray-600 mb-1">Password</label>
+          <input type="password" id="loginPassword"
+            class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Enter password">
+        </div>
+        <button onclick="attemptLogin()"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-bold shadow-md transition transform hover:-translate-y-0.5 mt-2">LOGIN
+          TO REGISTER</button>
+        <p id="loginError" class="text-red-500 font-bold mt-4 text-sm hidden">Invalid Username or Password!</p>
+      </div>
+
+      <div id="loginSuccessAnim" class="hidden flex-col items-center justify-center py-8 animate-nallathe">
+        <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-6"></div>
+        <h2 class="text-5xl font-black text-blue-600 tracking-tight">நல்லதே நடக்கும்</h2>
+        <p class="text-xs text-gray-400 font-bold uppercase tracking-[0.3em] mt-8 opacity-70">Securing Workspace</p>
+      </div>
+    </div>
+    <p class="text-blue-200 mt-8 font-semibold tracking-widest text-xs uppercase opacity-50">SRI SATHYA XEROX SECURE POS
+    </p>
+  </div>
+
+  <!-- Admin Settings Modal -->
+  <div id="adminSettingsModal"
+    class="hidden fixed inset-0 bg-black bg-opacity-60 z-[150] flex flex-col items-center justify-center no-print">
+    <div class="bg-white p-6 rounded-xl shadow-lg max-w-sm w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <h2 class="text-xl font-bold mb-4 flex-shrink-0">⚙️ Admin Settings</h2>
+      <div class="mb-2">
+        <label class="block text-sm font-bold text-gray-600 mb-1">New Admin Password</label>
+        <input type="password" id="newAdminPassword"
+          class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+          placeholder="Leave blank to skip">
+      </div>
+      <!-- Employee Management -->
+      <div class="flex-1 overflow-y-auto mb-2 border-t pt-2 custom-scroll mt-2">
+        <h3 class="text-sm font-black text-gray-800 mb-2 uppercase tracking-wide">Employee Management</h3>
+        <div class="bg-gray-50 p-2 rounded border border-gray-200 mb-2">
+          <input type="text" id="newEmpName"
+            class="w-full border border-gray-300 p-1.5 mb-2 text-sm rounded outline-none font-semibold uppercase"
+            placeholder="Enter Username (Name)">
+          <input type="password" id="newEmpPass"
+            class="w-full border border-gray-300 p-1.5 mb-2 text-sm rounded outline-none" placeholder="Enter Password">
+          <button onclick="addEmployee()"
+            class="w-full bg-blue-600 text-white font-bold py-1.5 rounded text-sm shadow-sm hover:bg-blue-700 transition">Add
+            Employee</button>
+        </div>
+        <div class="bg-gray-50 p-2 rounded border border-gray-200">
+          <select id="removeEmpSelect"
+            class="w-full border border-gray-300 p-1.5 mb-2 text-sm rounded outline-none cursor-pointer uppercase font-semibold"></select>
+          <button onclick="removeEmployee()"
+            class="w-full bg-red-500 text-white font-bold py-1.5 rounded text-sm shadow-sm hover:bg-red-600 transition">Remove
+            Employee</button>
+        </div>
+      </div>
+      <!-- Inventory Management -->
+      <div class="flex-1 overflow-y-auto mb-2 border-t pt-2 custom-scroll mt-2">
+        <h3 class="text-sm font-black text-gray-800 mb-2 uppercase tracking-wide">Inventory Management</h3>
+        <div class="flex gap-2 mb-2">
+          <select id="invCategorySelect"
+            class="w-1/2 border border-gray-300 p-1.5 text-sm rounded outline-none cursor-pointer"
+            onchange="loadAdminInventory()">
+            <option value="xerox">Xerox & Serv.</option>
+            <option value="stationery">Stationery</option>
+          </select>
+          <button onclick="deleteInventoryItem()"
+            class="w-1/2 bg-red-500 text-white font-bold py-1.5 rounded text-sm shadow-sm hover:bg-red-600 transition">Delete
+            Selected</button>
+        </div>
+        <select id="invItemSelect"
+          class="w-full border border-gray-300 p-1.5 mb-2 text-sm rounded outline-none cursor-pointer font-medium"
+          size="4"></select>
+        <div class="flex gap-2">
+          <input type="text" id="invNewItemName"
+            class="w-2/3 border border-gray-300 p-1.5 text-sm rounded outline-none font-semibold"
+            placeholder="Item Name">
+          <input type="number" id="invNewItemPrice"
+            class="w-1/3 border border-gray-300 p-1.5 text-sm rounded outline-none" placeholder="Price (₹)">
+        </div>
+        <button onclick="addInventoryItem()"
+          class="w-full bg-blue-600 text-white font-bold py-1.5 mt-2 rounded text-sm shadow-sm hover:bg-blue-700 transition">Add
+          / Update Item</button>
+      </div>
+      <div class="border-t border-b py-4 mb-4 flex justify-between">
+        <button onclick="exportDBBackup()"
+          class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-2 rounded text-sm shadow transition">⬇️
+          Export DB</button>
+        <button onclick="document.getElementById('importDbFile').click()"
+          class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-3 py-2 rounded text-sm shadow transition">⬆️
+          Restore DB</button>
+        <input type="file" id="importDbFile" class="hidden" accept=".json" onchange="restoreDBBackup(event)">
+      </div>
+      <div class="flex justify-end gap-2 flex-shrink-0">
+        <button onclick="document.getElementById('adminSettingsModal').classList.add('hidden')"
+          class="px-4 py-2 text-gray-600 font-bold hover:bg-gray-100 rounded transition">Cancel</button>
+        <button onclick="saveAdminSettings()"
+          class="px-4 py-2 bg-blue-600 text-white font-bold rounded shadow hover:bg-blue-700 transition">Save
+          Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Clone the receipt area perfectly for printing
+    window.addEventListener('beforeprint', () => {
+      document.getElementById('printArea').innerHTML = document.getElementById('receiptDocument').outerHTML;
+    });
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "PASTE_YOUR_API_KEY",
+      authDomain: "PASTE_YOUR_AUTH_DOMAIN",
+      projectId: "PASTE_YOUR_PROJECT_ID",
+      storageBucket: "PASTE_YOUR_STORAGE_BUCKET",
+      messagingSenderId: "PASTE_YOUR_MESSAGING_ID",
+      appId: "PASTE_YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Make functions globally available for script.js
+    window.saveBill = async function(billData) {
+      try {
+        await addDoc(collection(db, "bills"), billData);
+        alert("Saved successfully");
+      } catch (e) {
+        console.error("Error adding document: ", e);
+        alert("Failed to save bill. Please check console.");
+      }
+    };
+
+    window.updateBill = async function(docId, updateData) {
+      try {
+        // dynamic import of updateDoc and doc
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const billRef = doc(db, "bills", docId);
+        await updateDoc(billRef, updateData);
+      } catch (e) {
+        console.error("Error updating document: ", e);
+      }
+    };
+
+    // Load bills in real-time
+    window.loadBills = function() {
+      const q = query(collection(db, "bills"));
+      onSnapshot(q, (querySnapshot) => {
+        const bills = [];
+        querySnapshot.forEach((doc) => {
+          bills.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Expose bills to global transactions array in script.js
+        window.transactions = bills;
+        
+        // Update reports UI if function exists
+        if (typeof window.loadReports === "function") {
+          window.loadReports();
+        }
+      });
+    };
+
+    // Start listening to bills immediately
+    window.loadBills();
+  </script>
+
+</body>
+
+</html>

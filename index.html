@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS - Xerox Shop Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+</head>
+<body class="h-screen w-screen flex flex-col p-4 gap-4 relative overflow-hidden">
+
+  <!-- Decorative Background -->
+  <div class="absolute -top-40 -right-40 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 pointer-events-none"></div>
+  <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 pointer-events-none"></div>
+
+  <!-- Top Navigation -->
+  <nav class="glass-panel w-full p-4 flex justify-between items-center z-10 no-print flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <h1 class="text-xl font-black tracking-widest text-white">SRI SATHYA XEROX</h1>
+      <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">POS Terminal</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="historyBtn" class="glass-button bg-slate-700/50 text-sm px-4 py-2">
+        📜 History
+      </button>
+      <button id="dashboardBtn" class="hidden glass-button bg-gradient-to-r from-emerald-600 to-emerald-500 text-sm px-4 py-2" onclick="window.location.href='dashboard.html'">
+        📊 Dashboard
+      </button>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">User:</span>
+        <span id="userNameDisplay" class="text-sm font-bold text-white">Loading...</span>
+      </div>
+      <button onclick="window.logout()" class="glass-button glass-button-danger text-sm px-4 py-2">
+        Logout
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Workspace -->
+  <div class="flex flex-1 gap-4 overflow-hidden z-10 no-print">
+
+    <!-- LEFT PANEL: Inputs -->
+    <div class="glass-panel w-1/3 flex flex-col p-5 gap-4 overflow-y-auto custom-scroll">
+      
+      <!-- Customer Info -->
+      <div>
+        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">Customer Details</h2>
+        <div class="space-y-3">
+          <input type="tel" id="customerMobile" class="glass-input text-lg font-bold" placeholder="Mobile Number (Auto-fetch)" maxlength="10">
+          <input type="text" id="customerName" class="glass-input font-bold" placeholder="Customer Name">
+          
+          <div id="customerStats" class="hidden grid-cols-2 gap-2 mt-2">
+            <div class="bg-indigo-500/10 border border-indigo-500/20 p-2 rounded flex flex-col">
+              <span class="text-[10px] text-indigo-300 font-bold uppercase">Total Spent</span>
+              <span id="statTotalSpent" class="text-sm font-black text-white">₹0</span>
+            </div>
+            <div class="bg-emerald-500/10 border border-emerald-500/20 p-2 rounded flex flex-col">
+              <span class="text-[10px] text-emerald-300 font-bold uppercase">Loyalty Points</span>
+              <span id="statPoints" class="text-sm font-black text-white">0 Pts</span>
+            </div>
+            <div class="col-span-2 bg-amber-500/10 border border-amber-500/20 p-2 rounded flex justify-between items-center">
+              <span class="text-[10px] text-amber-300 font-bold uppercase">Auto-Discount Tier</span>
+              <span id="statTier" class="text-xs font-black text-amber-400 px-2 py-0.5 bg-amber-500/20 rounded">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Items -->
+      <div class="flex-1 flex flex-col">
+        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">Add Bill Item</h2>
+        
+        <input type="text" id="itemSearch" class="glass-input mb-3" placeholder="🔍 Search item...">
+        
+        <select id="itemSelect" class="glass-input mb-3 font-medium">
+          <!-- Populated by JS -->
+        </select>
+        
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <input type="number" id="itemPrice" class="glass-input font-bold" placeholder="Price (₹)">
+          <input type="number" id="itemQty" class="glass-input font-bold" placeholder="Qty">
+        </div>
+        
+        <button id="addItemBtn" class="glass-button w-full mt-2 py-3 text-lg">
+          + Add Item
+        </button>
+      </div>
+      
+      <!-- Loyalty Redemption -->
+      <div>
+         <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">Redeem Points</h2>
+         <div class="flex gap-2">
+            <input type="number" id="redeemPoints" class="glass-input" placeholder="Points to redeem">
+            <button id="applyPointsBtn" class="glass-button whitespace-nowrap bg-indigo-500/20 border border-indigo-500/50">Apply</button>
+         </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Receipt Preview -->
+    <div class="glass-panel w-2/3 flex flex-col p-0 relative overflow-hidden bg-white/5">
+      
+      <div class="absolute top-4 right-4 flex gap-2 z-20 no-print" id="actionButtons">
+        <button id="clearBillBtn" class="glass-button bg-slate-700/50 border border-slate-600 hover:bg-slate-600 text-xs px-3 py-1.5">
+          🗑️ Clear
+        </button>
+        <button id="generateBillBtn" class="glass-button glass-button-success font-bold px-4 py-1.5">
+          ✅ Generate Bill
+        </button>
+        <button id="whatsappBtn" class="hidden glass-button bg-[#25D366] hover:bg-[#128C7E] font-bold px-3 py-1.5 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          Send
+        </button>
+        <button id="pdfBtn" class="hidden glass-button bg-slate-100 hover:bg-white text-slate-900 font-bold px-3 py-1.5 flex items-center gap-2">
+          📄 PDF
+        </button>
+      </div>
+
+      <!-- Receipt Area -->
+      <div id="receiptContainer" class="flex-1 overflow-y-auto custom-scroll p-8 text-slate-200">
+        <div class="border-b border-slate-700 pb-4 mb-4 flex justify-between items-start">
+          <div>
+            <h2 class="text-2xl font-black text-white tracking-widest">INVOICE</h2>
+            <p id="receiptInvoiceNo" class="text-sm font-bold text-indigo-400 mt-1">Pending Generation</p>
+          </div>
+          <div class="text-right">
+             <p id="receiptDate" class="text-sm font-bold text-slate-400"></p>
+             <p id="receiptTime" class="text-xs font-medium text-slate-500"></p>
+          </div>
+        </div>
+
+        <div class="mb-6 border-l-2 border-indigo-500 pl-4">
+          <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Bill To:</p>
+          <p id="receiptCustomerName" class="text-lg font-bold text-white">Cash Customer</p>
+          <p id="receiptCustomerMobile" class="text-sm text-slate-400"></p>
+        </div>
+
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="border-b border-slate-700 text-slate-400 uppercase text-[10px] tracking-wider">
+              <th class="py-2 w-10">#</th>
+              <th class="py-2">Item Description</th>
+              <th class="py-2 text-center">Qty</th>
+              <th class="py-2 text-right">Price</th>
+              <th class="py-2 text-right">Total</th>
+              <th class="py-2 w-10"></th>
+            </tr>
+          </thead>
+          <tbody id="receiptItems" class="divide-y divide-slate-800/50">
+            <!-- Items injected here -->
+          </tbody>
+        </table>
+        
+        <div id="emptyCartMsg" class="text-center py-10 text-slate-500 font-bold uppercase tracking-widest text-sm">
+          No items added
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-700 ml-auto w-1/2">
+          <div class="flex justify-between py-1 text-sm font-medium text-slate-300">
+            <span>Subtotal</span>
+            <span id="receiptSubtotal">₹0.00</span>
+          </div>
+          <div class="flex justify-between py-1 text-sm font-bold text-emerald-400">
+            <span>Auto-Discount (<span id="receiptDiscountPerc">0</span>%)</span>
+            <span id="receiptDiscountAmt">-₹0.00</span>
+          </div>
+          <div class="flex justify-between py-1 text-sm font-bold text-indigo-400">
+            <span>Points Redeemed</span>
+            <span id="receiptPointsRedeemed">-₹0.00</span>
+          </div>
+          <div class="flex justify-between py-3 mt-2 border-t border-slate-600 text-xl font-black text-white">
+            <span>TOTAL</span>
+            <span id="receiptFinalAmount">₹0.00</span>
+          </div>
+          <div class="text-right mt-1">
+            <span id="receiptPointsEarned" class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded uppercase tracking-wide">
+              Earns 0 Loyalty Points
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Modal -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex justify-center items-center p-4">
+    <div class="glass-panel w-full max-w-4xl h-[80vh] flex flex-col p-6 relative">
+      <button id="closeHistoryBtn" class="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl">&times;</button>
+      <h2 class="text-xl font-black text-white tracking-widest mb-4">📜 Previous Bills</h2>
+      
+      <div class="flex-1 overflow-y-auto custom-scroll">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="text-slate-400 border-b border-slate-700 uppercase text-[10px] tracking-wider">
+              <th class="py-3 px-2">Date & Time</th>
+              <th class="py-3 px-2">Invoice No</th>
+              <th class="py-3 px-2">Customer</th>
+              <th class="py-3 px-2 text-right">Total</th>
+              <th class="py-3 px-2 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody" class="divide-y divide-slate-800/50">
+            <!-- Populated by JS -->
+            <tr><td colspan="5" class="py-4 text-center text-slate-500 italic">Loading records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/billing.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Xerox Shop Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+</head>
+<body class="h-screen w-screen flex items-center justify-center p-4">
+
+  <div class="glass-panel w-full max-w-md p-8 relative overflow-hidden">
+    <!-- Decorative background elements -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+    <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+
+    <div class="relative z-10">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-black text-white tracking-tight mb-2">SRI SATHYA XEROX</h1>
+        <p class="text-slate-400 text-sm font-medium tracking-wide uppercase">Secure Staff Portal</p>
+      </div>
+
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Email Address</label>
+          <input type="email" id="email" class="glass-input" placeholder="Enter your email" required autocomplete="email">
+        </div>
+        
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Password</label>
+          <input type="password" id="password" class="glass-input" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div id="errorMessage" class="hidden bg-red-500/10 border border-red-500/50 text-red-400 text-sm p-3 rounded-lg font-medium text-center"></div>
+
+        <button type="submit" id="loginBtn" class="glass-button w-full mt-4">
+          Login to Workspace
+        </button>
+      </form>
+
+      <div class="mt-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Sri Sathya Xerox & E-Services</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>

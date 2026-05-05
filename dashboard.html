@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Xerox Shop Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+</head>
+<body class="h-screen w-screen flex flex-col p-4 gap-4 relative overflow-hidden">
+
+  <!-- Decorative Background -->
+  <div class="absolute -top-40 -right-40 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 pointer-events-none"></div>
+  <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-20 pointer-events-none"></div>
+
+  <!-- Top Navigation -->
+  <nav class="glass-panel w-full p-4 flex justify-between items-center z-10 no-print flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <h1 class="text-xl font-black tracking-widest text-white">SRI SATHYA XEROX</h1>
+      <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">Admin Dashboard</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="glass-button bg-slate-700/50 text-sm px-4 py-2" onclick="window.location.href='index.html'">
+        🛒 POS Terminal
+      </button>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Admin:</span>
+        <span id="userNameDisplay" class="text-sm font-bold text-white">Loading...</span>
+      </div>
+      <button onclick="window.logout()" class="glass-button glass-button-danger text-sm px-4 py-2">
+        Logout
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Workspace -->
+  <div class="flex flex-1 gap-4 overflow-hidden z-10">
+
+    <!-- LEFT PANEL: KPI Cards -->
+    <div class="w-1/4 flex flex-col gap-4 overflow-y-auto custom-scroll pr-2">
+      <div class="glass-panel p-6 flex flex-col">
+        <span class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Today's Revenue</span>
+        <span id="todayRevenue" class="text-3xl font-black text-emerald-400">₹0.00</span>
+      </div>
+
+      <div class="glass-panel p-6 flex flex-col">
+        <span class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Monthly Revenue</span>
+        <span id="monthlyRevenue" class="text-3xl font-black text-indigo-400">₹0.00</span>
+      </div>
+      
+      <div class="glass-panel p-5 flex flex-col flex-1">
+        <span class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">Top Staff (Today)</span>
+        <ul id="topStaffList" class="space-y-3">
+           <li class="text-sm text-slate-500 italic">Loading data...</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MIDDLE PANEL: Chart & Top Customers -->
+    <div class="w-1/2 flex flex-col gap-4 overflow-y-auto custom-scroll pr-2">
+      <div class="glass-panel p-5 flex-shrink-0">
+        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">Revenue Trend (Last 7 Days)</h2>
+        <canvas id="revenueChart" class="w-full h-48"></canvas>
+      </div>
+
+      <div class="glass-panel p-5 flex-1 flex flex-col">
+        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">Top 5 Loyal Customers</h2>
+        <div class="flex-1 overflow-y-auto custom-scroll">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="text-slate-400 border-b border-slate-700">
+                <th class="py-2">Name</th>
+                <th class="py-2">Mobile</th>
+                <th class="py-2 text-right">Total Spent</th>
+                <th class="py-2 text-right">Points</th>
+              </tr>
+            </thead>
+            <tbody id="topCustomersTable" class="divide-y divide-slate-800/50">
+              <tr><td colspan="4" class="py-4 text-center text-slate-500 italic">Loading data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Activity Logs -->
+    <div class="glass-panel w-1/4 flex flex-col p-5 overflow-hidden">
+      <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2 flex justify-between items-center">
+        <span>Activity Feed</span>
+        <span class="text-[9px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">Live</span>
+      </h2>
+      <div id="activityFeed" class="flex-1 overflow-y-auto custom-scroll space-y-3">
+        <div class="text-sm text-slate-500 italic text-center py-4">Loading activities...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
